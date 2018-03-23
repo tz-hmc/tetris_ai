@@ -137,7 +137,7 @@ class TetrisApp(object):
 		                                             # mouse movement
 		                                             # events, so we
 		                                             # block them.
-		self.next_stone = [random.choice(tetris_shapes) for i in range(3)]
+		self.next_stone = [random.choice(tetris_shapes) for i in range(6)]
 		self.init_game()
 
 	def new_stone(self):
@@ -316,13 +316,21 @@ Press space to continue""" % self.score)
 						2))
 					self.disp_msg("Score: %d\n\nLevel: %d\
 \nLines: %d" % (self.score, self.level, self.lines),
-						(self.rlim+cell_size, cell_size*5))
+						(self.rlim+cell_size, cell_size*18))
 					self.draw_matrix(self.bground_grid, (0,0))
 					self.draw_matrix(self.board, (0,0))
 					self.draw_matrix(self.stone,
 						(self.stone_x, self.stone_y))
 					self.draw_matrix(self.next_stone[0],
 						(cols+1,2))
+					self.draw_matrix(self.next_stone[1],
+						(cols+1,5))
+					self.draw_matrix(self.next_stone[2],
+						(cols+1,8))
+					self.draw_matrix(self.next_stone[3],
+						(cols+1,11))
+					self.draw_matrix(self.next_stone[4],
+						(cols+1,14))
 			pygame.display.update()
 
 			for event in pygame.event.get():
