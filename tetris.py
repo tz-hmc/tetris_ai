@@ -46,6 +46,9 @@ from random import randrange as rand
 import pygame, sys
 import tetris_ai as ai
 import random
+import rotations as r
+from pprint import pprint
+
 # The configuration
 cell_size =	18
 cols =		10
@@ -65,32 +68,63 @@ colors = [
 ]
 
 # Define the shapes of the single parts
+# Because I'm a shit person, I indicate the origin (point where it spins)
+# with an extra .5 so I can avoid storing extra data. (hahahahaha)
 tetris_shapes = [
-	[[1, 1, 1],
+	[[1, 1.5, 1],
 	 [0, 1, 0]],
 
-	[[0, 2, 2],
-	 [2, 2, 0]],
+	[[0.5, 2, 2],
+	[2, 2, 0]],
 
 	[[3, 3, 0],
-	 [0, 3, 3]],
+	 [0.5, 3, 3]],
 
-	[[4, 0, 0],
+	[[4, 0.5, 0],
 	 [4, 4, 4]],
 
-	[[0, 0, 5],
+	[[0, 0.5, 5],
 	 [5, 5, 5]],
 
-	[[6, 6, 6, 6]],
+	[[6, 6, 6, 6.5]],
 
-	[[7, 7],
+	[[7.5, 7],
 	 [7, 7]]
 ]
 
+def matrixmult (A, B):
+    rows_A = len(A)
+    cols_A = len(A[0])
+    rows_B = len(B)
+    cols_B = len(B[0])
+
+    if cols_A != rows_B:
+      print "Cannot multiply the two matrices. Incorrect dimensions."
+      return
+
+    # Create the result matrix
+    # Dimensions would be rows_A x cols_B
+    C = [[0 for row in range(cols_B)] for col in range(rows_A)]
+    print C
+
+    for i in range(rows_A):
+        for j in range(cols_B):
+            for k in range(cols_A):
+                C[i][j] += A[i][k] * B[k][j]
+    return C
+
+def find_rotate_pt(shape):
+	pass
+
 def rotate_clockwise(shape):
+	# x' = -y
+ 	# y' = x ?
+	"""
 	return [ [ shape[y][x]
 			for y in xrange(len(shape)) ]
-		for x in xrange(len(shape[0]) - 1, -1, -1) ]
+			for x in xrange( len(shape[0])-1, -1, -1 ) ]
+	"""
+	return r.rotate_clockwise(shape)
 
 def check_collision(board, shape, offset):
 	off_x, off_y = offset
@@ -138,6 +172,7 @@ class TetrisApp(object):
 		                                             # events, so we
 		                                             # block them.
 		self.next_stone = [random.choice(tetris_shapes) for i in range(6)]
+		self.collision_delay = 0
 		self.init_game()
 
 	def new_stone(self):
@@ -191,7 +226,7 @@ class TetrisApp(object):
 				if val:
 					pygame.draw.rect(
 						self.screen,
-						colors[val],
+						colors[int(val)],
 						pygame.Rect(
 							(off_x+x) *
 							  cell_size,
@@ -221,6 +256,7 @@ class TetrisApp(object):
 			                       self.stone,
 			                       (new_x, self.stone_y)):
 				self.stone_x = new_x
+
 	def quit(self):
 		self.center_msg("Exiting...")
 		pygame.display.update()
@@ -229,10 +265,16 @@ class TetrisApp(object):
 	def drop(self, manual):
 		if not self.gameover and not self.paused:
 			self.score += 1 if manual else 0
-			self.stone_y += 1
-			if check_collision(self.board,
+			new_stone_y = self.stone_y+1
+			collide = check_collision(self.board,
 			                   self.stone,
-			                   (self.stone_x, self.stone_y)):
+			                   (self.stone_x, new_stone_y))
+			# Once it collides, allow a second to move it around (for drop/spins)
+			if collide and self.collision_delay < 4:
+				self.collision_delay += 1
+			elif collide and self.collision_delay >= 4:
+				self.collision_delay = 0
+				self.stone_y = new_stone_y
 				self.board = join_matrixes(
 				  self.board,
 				  self.stone,
@@ -250,6 +292,8 @@ class TetrisApp(object):
 						break
 				self.add_cl_lines(cleared_rows)
 				return True
+			else:
+				self.stone_y = new_stone_y
 		return False
 
 	def insta_drop(self):
@@ -277,8 +321,9 @@ class TetrisApp(object):
 		#print self.board, self.stone, self.stone_x, self.stone_y
 		ai_obj = ai.TetrisAI(self.board, self.stone, self.next_stone, self.stone_x, self.stone_y)
 		# board, stone, next_stone
-		print ai_obj.ai_move()
-
+		s = ai_obj.ai_move()
+		#pprint(s.board)
+		#pprint(s.init_board)
 		#print next_move
 
 	def run(self):
@@ -307,6 +352,7 @@ Press space to continue""" % self.score)
 				if self.paused:
 					self.center_msg("Paused")
 				else:
+					#self.begin_ai()
 					pygame.draw.line(self.screen,
 						(255,255,255),
 						(self.rlim+1, 0),
