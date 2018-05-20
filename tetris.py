@@ -1,6 +1,3 @@
-# This file was originally developed by <me@laria.me>
-# Small changes were made here to call the tetris_ai module.
-
 #!/usr/bin/env python2
 #-*- coding: utf-8 -*-
 
@@ -9,8 +6,6 @@
 # http://hi-im.laria.me/progs/tetris_py_exefied.zip
 # If a DLL is missing or something like this, write an E-Mail (me@laria.me)
 # or leave a comment on this gist.
-
-# Very simple tetris implementation
 #
 # Control keys:
 #       Down - Drop stone faster
@@ -53,7 +48,7 @@ from pprint import pprint
 cell_size =	18
 cols =		10
 rows =		22
-maxfps = 	30
+maxfps = 	40
 
 colors = [
 (0,   0,   0  ),
@@ -117,14 +112,10 @@ def find_rotate_pt(shape):
 	pass
 
 def rotate_clockwise(shape):
-	# x' = -y
- 	# y' = x ?
-	"""
-	return [ [ shape[y][x]
-			for y in xrange(len(shape)) ]
-			for x in xrange( len(shape[0])-1, -1, -1 ) ]
-	"""
 	return r.rotate_clockwise(shape)
+
+def rotate_counterclockwise(shape):
+	return r.rotate_counterclockwise(shape)
 
 def check_collision(board, shape, offset):
 	off_x, off_y = offset
@@ -270,9 +261,9 @@ class TetrisApp(object):
 			                   self.stone,
 			                   (self.stone_x, new_stone_y))
 			# Once it collides, allow a second to move it around (for drop/spins)
-			if collide and self.collision_delay < 4:
+			if collide and self.collision_delay < 3:
 				self.collision_delay += 1
-			elif collide and self.collision_delay >= 4:
+			elif collide and self.collision_delay >= 3:
 				self.collision_delay = 0
 				self.stone_y = new_stone_y
 				self.board = join_matrixes(
@@ -309,6 +300,14 @@ class TetrisApp(object):
 			                       (self.stone_x, self.stone_y)):
 				self.stone = new_stone
 
+	def rotate_stone_counter(self):
+		if not self.gameover and not self.paused:
+			new_stone = rotate_counterclockwise(self.stone)
+			if not check_collision(self.board,
+			                       new_stone,
+			                       (self.stone_x, self.stone_y)):
+				self.stone = new_stone
+
 	def toggle_pause(self):
 		self.paused = not self.paused
 
@@ -333,6 +332,7 @@ class TetrisApp(object):
 			'RIGHT':	lambda:self.move(+1),
 			'DOWN':		lambda:self.drop(True),
 			'UP':		self.rotate_stone,
+			'z':		self.rotate_stone_counter,
 			'p':		self.toggle_pause,
 			'RETURN':	self.start_game,
 			'SPACE':	self.insta_drop,
